@@ -1,1 +1,77 @@
+name: shopify-blog-rest-api
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_environment:
+        description: 'Deployment Environment'
+        required: true
+        default: 'development'
+
+env:
+  PYTHON_VERSION: 3.9
+  FLASK_ENV: development
+
+jobs:
+  setup-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Create Virtual Environment
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+
+    - name: Install Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install flask
+        pip install flask-sqlalchemy
+        pip install flask-bcrypt
+        pip install flask-jwt-extended
+        pip install marshmallow
+
+    - name: Set Environment Variables
+      run: |
+        echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> $GITHUB_ENV
+        echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
+
+    - name: Run API Server
+      run: |
+        python shopify_blog_api.py &
+      env:
+        FLASK_APP: shopify_blog_api.py
+        FLASK_ENV: ${{ env.FLASK_ENV }}
+
+    - name: Test API Endpoints
+      run: |
+        # Add your API testing commands here
+        curl http://localhost:5000/products
+        curl http://localhost:5000/blog-posts
+
+    - name: Deploy to Chosen Environment
+      run: |
+        echo "Deploying to ${{ github.event.inputs.deploy_environment }}"
+        # Add deployment logic specific to your environment
+
+# Dependency Requirements
+dependencies:
+  - python=3.9
+  - flask
+  - sqlalchemy
+  - pip:
+    - flask-sqlalchemy
+    - flask-bcrypt
+    - flask-jwt-extended
+    - marshmallow
+Last edited 11 minutes ago
+
+
 
